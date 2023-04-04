@@ -9,24 +9,29 @@
 SkipList::SkipList()
 {
     srand(time(0));
-    tail=new Skiplistnode(std::numeric_limits<int>::max());
-    head=new Skiplistnode(std::numeric_limits<int>::min());
+    tail=new skipListNode(skipListData(0,""));
+    head=new skipListNode(skipListData(0,""));
     for(int i=0;i<32;i++)head->next[i]=tail;
-    SearchLength=0;
     pr=0.5;
 }
 
-void SkipList::insert(int x)
+void SkipList::insert(skipListData &x)
 {
     //if(x%10000==0)std::cout<<"insert"<<x<<"\n";
-    Skiplistnode *p=head;
-    std::vector<Skiplistnode *> pre(MaxLevel);
+    skipListData searchResult= search(x.key);
+    if(searchResult!=findError)
+    {
+        searchResult.value=x.value;
+        return;
+    }
+    skipListNode *p=head;
+    std::vector<skipListNode *> pre(MaxLevel);
     for(int i=MaxLevel-1;i>=0;i--)
     {
         while(p->next[i]!= tail&&p->next[i]->val<x)p=p->next[i];
         pre[i]=p;
     }
-    p=new Skiplistnode(x);
+    p=new skipListNode(x);
     for(int i=0;i<MaxLevel;i++)
     {
         p->next[i]=pre[i]->next[i];
@@ -35,21 +40,17 @@ void SkipList::insert(int x)
     }
 }
 
-bool SkipList::search(int x)
+skipListData& SkipList::search(uint64_t key)
 {
     int height=32;
-    Skiplistnode *p=head;
-    std::vector<Skiplistnode *> pre(height);
+    skipListNode *p=head;
+    std::vector<skipListNode *> pre(height);
     for(int i=height-1;i>=0;i--)
     {
-        while(p->next[i]!= tail&&p->next[i]->val<x)p=p->next[i];
+        while(p->next[i]!= tail&&p->next[i]->val.key<key)p=p->next[i];
         pre[i]=p;
     }
     p=pre[0]->next[0];
-    return p==tail && p->val==x;
-}
-
-int SkipList::GetSearchLength()
-{
-    return SearchLength;
+    if(p==tail||p->val.key!=key)return findError;
+    return p->val;
 }
