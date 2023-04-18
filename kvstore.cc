@@ -15,6 +15,8 @@ KVStore::~KVStore()
  */
 void KVStore::put(uint64_t key, const std::string &s)
 {
+	skipListData insertData(key,s);
+	memtable.insert(insertData);
 }
 /**
  * Returns the (string) value of the given key.
@@ -22,7 +24,9 @@ void KVStore::put(uint64_t key, const std::string &s)
  */
 std::string KVStore::get(uint64_t key)
 {
-	return "";
+	skipListData getData= memtable.search(key);
+	if(getData==findError||getData.value=="~DELETED~")return "";
+	else return getData.value;
 }
 /**
  * Delete the given key-value pair if it exists.
@@ -30,7 +34,11 @@ std::string KVStore::get(uint64_t key)
  */
 bool KVStore::del(uint64_t key)
 {
-	return false;
+	skipListData tmp=memtable.search(key);
+	if(tmp==findError||tmp.value=="~DELETED~")return false;
+	skipListData delData(key,"~DELETED~");
+	memtable.insert(delData);
+	return true;
 }
 
 /**
@@ -48,4 +56,5 @@ void KVStore::reset()
  */
 void KVStore::scan(uint64_t key1, uint64_t key2, std::list<std::pair<uint64_t, std::string> > &list)
 {	
+	memtable.scan(key1,key2,list);
 }

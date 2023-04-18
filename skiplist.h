@@ -7,6 +7,7 @@
 #include<limits>
 #include<vector>
 #include<string>
+#include<list>
 class skipListData
 {
 public:
@@ -38,7 +39,7 @@ public:
     }
 };
 
-skipListData findError=skipListData(0,"\1");
+extern skipListData findError;
 
 class SkipList {
 private:
@@ -49,5 +50,6 @@ public:
     void insert(skipListData &x);
     skipListData& search(uint64_t key);
     SkipList();
+    void scan(uint64_t key1,uint64_t key2,std::list<std::pair<uint64_t, std::string> > &list);
 };
 #endif //LSMKV_TREE_SKIPLIST_H
