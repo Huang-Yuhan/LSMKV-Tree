@@ -10,6 +10,8 @@ skipListData findError=skipListData(0,"\1");
 
 SkipList::SkipList()
 {
+    keyNum=0;
+    totoalMemSize=32+10240;
     srand(time(0));
     tail=new skipListNode(skipListData(0,""));
     head=new skipListNode(skipListData(0,""));
@@ -23,9 +25,14 @@ void SkipList::insert(skipListData &x)
     skipListData &searchResult= search(x.key);
     if(searchResult!=findError)
     {
+        totoalMemSize=totoalMemSize+getStrMemSize(x.value)-getStrMemSize(searchResult.value);
         searchResult.value=x.value;
         return;
     }
+    // insert a new (K,V) we need key(uint64) & offset(uint32) & value(calculate)
+    totoalMemSize+=getStrMemSize(x.value);
+    totoalMemSize+=sizeof(uint64_t)+sizeof(uint32_t);
+    keyNum++;
     skipListNode *p=head;
     std::vector<skipListNode *> pre(MaxLevel);
     for(int i=MaxLevel-1;i>=0;i--)
@@ -74,4 +81,34 @@ void SkipList::scan(uint64_t key1,uint64_t key2,std::list<std::pair<uint64_t, st
         p=p->next[0];
     }
     return;
+}
+
+inline uint64_t SkipList::getStrMemSize(const std::string& s)
+{
+    return s.size()*sizeof(char);
+}
+
+skipListNode*const SkipList::begin()
+{
+    return head->next[0];
+}
+skipListNode*const SkipList::end()
+{
+    return tail;
+}
+
+void SkipList::clear()
+{
+    keyNum=0;
+    totoalMemSize=32+10240;
+    srand(time(0));
+    skipListNode *p=head->next[0];
+    while(p!=tail)
+    {
+        head->next[0]=p->next[0];
+        delete p;
+        p=head->next[0];
+    }
+    for(int i=0;i<32;i++)head->next[i]=tail;
+    pr=0.5;
 }
