@@ -11,11 +11,16 @@
 class BloomFilter
 {
 	private:
-		bool mark[81920];
+		bool mark[81920];				//Bloom Filter
+		std::vector<uint64_t> cacheKey;
+		std::vector<uint32_t> cacheOffset;
 		unsigned int hash[4];
+		std::string filename;			
 	public:
-		BloomFilter(const char *s);
+		BloomFilter(const char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &name);
+		uint32_t getOffset(uint64_t key,uint32_t &length);							//return 0 if not find else offset, set the data length
 		bool check(uint64_t key);
+		const std::string getFileName()const;
 };
 
 class KVStore : public KVStoreAPI {
@@ -24,8 +29,11 @@ private:
 	static const int BloomFilterMaxSize=81920;
 	SkipList memtable;
 	uint64_t timeStamp;				
-	void MemToSS();
 	std::vector<BloomFilter*> BloomFilters;
+
+	void MemToSS(std::string dir);
+	std::string getFileData(const std::string &filePath,uint32_t offset,uint32_t length);
+	std::string searchSSTable(uint64_t key);
 public:
 	KVStore(const std::string &dir);
 

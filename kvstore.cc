@@ -1,5 +1,6 @@
 #include "kvstore.h"
 #include <string>
+#include <algorithm>
 
 KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
 {
@@ -39,8 +40,10 @@ void KVStore::put(uint64_t key, const std::string &s)
 std::string KVStore::get(uint64_t key)
 {
 	skipListData getData= memtable.search(key);
-	if(getData==findError||getData.value=="~DELETED~")return "";
-	else return getData.value;
+	if(getData.value=="~DELETED~")return "";
+	if(getData==findError)				//not find in memtable 
+	//ready search in the SSTable
+	return searchSSTable(key);
 }
 /**
  * Delete the given key-value pair if it exists.
@@ -77,7 +80,7 @@ void KVStore::scan(uint64_t key1, uint64_t key2, std::list<std::pair<uint64_t, s
 // convert the memtable to SStable
 void KVStore::MemToSS(std::string dir)
 {
-	std::string filePath=std::to_string(timeStamp)+"_"+std::to_string(memtable.keyNum)+"_";
+	std::string fileName=std::to_string(timeStamp)+"_"+std::to_string(memtable.keyNum)+"_";
 	uint64_t headerOffset=0;
 	uint64_t BFOffset=32;
 	uint64_t indexOffset=10240+32;
@@ -96,13 +99,19 @@ void KVStore::MemToSS(std::string dir)
 	memcpy(buffer+16,&keymin,sizeof(uint64_t));							//Header---keymin
 	int index;
 	uint32_t valOffset,preOffset=dataOffset;
+
+	std::vector<uint64_t> mem_key;
+	std::vector<uint32_t> mem_offset;
+
 	for(int pos=0;pos<memtable.keyNum;pos++)
 	{
 		index=indexOffset+pos*(sizeof(uint64_t)+sizeof(uint32_t));
 		memcpy(buffer+index,&(p->val.key),sizeof(uint64_t));			//key
+		mem_key.push_back(p->val.key);
 		valOffset=preOffset;
 		preOffset=valOffset+sizeof(char)*p->val.value.size();
 		memcpy(buffer+index+sizeof(uint64_t),&valOffset,sizeof(uint32_t));		//offset
+		mem_offset.push_back(valOffset);
 		memcpy(buffer+valOffset,p->val.value.c_str(),sizeof(char)*p->val.value.size());	//value
 		MurmurHash3_x64_128(&(p->val.key),sizeof(uint64_t),1,hash);
 		for(int i=0;i<4;i++)bloomfilter[hash[i]%BloomFilterMaxSize]=true;
@@ -111,8 +120,8 @@ void KVStore::MemToSS(std::string dir)
 	}
 	memcpy(buffer+24,&keymax,sizeof(uint64_t));							//Header---keymax
 	memcpy(buffer+BFOffset,&bloomfilter,10240);							//BF
-	filePath+=std::to_string(keymin)+"_"+std::to_string(keymax)+".ss";
-	os.open(dir+"/"+filePath,std::ios::out|std::ios::binary);
+	fileName+=std::to_string(keymin)+"_"+std::to_string(keymax)+".ss";
+	os.open(dir+"/"+fileName,std::ios::out|std::ios::binary);
 	os.write(buffer,memtable.totoalMemSize);
 	delete buffer;
 	os.close();
@@ -120,15 +129,17 @@ void KVStore::MemToSS(std::string dir)
 
 	//store the bloomfilter in the cache
 
-	BloomFilter * tmp=new BloomFilter((char*)bloomfilter);
+	BloomFilter * tmp=new BloomFilter((char*)bloomfilter,mem_key,mem_offset,fileName);
 	index=timeStamp-1;
 	while(BloomFilters.size()<index)BloomFilters.push_back(nullptr);
 	BloomFilters[index]=tmp;
 }
 
-BloomFilter::BloomFilter(const char *s)
+BloomFilter::BloomFilter(const char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &name)
+:cacheKey(key),cacheOffset(offset),filename(name)
 {
 	memcpy(mark,s,10240);
+
 }
 
 bool BloomFilter::check(uint64_t key)
@@ -138,4 +149,70 @@ bool BloomFilter::check(uint64_t key)
 	for(int i=0;i<4;i++)if(!mark[hash[i]%81920])return false;
 	return true;
 
+}
+
+uint32_t BloomFilter::getOffset(uint64_t key,uint32_t &length)
+{
+	std::vector<uint64_t>::iterator it=std::lower_bound(cacheKey.begin(),cacheKey.end(),key);	
+	if(it==cacheKey.end()||(*it)!=key)return 0;
+	int index=it-cacheKey.begin();
+	if(index+1==cacheOffset.size())
+	{
+		length=0;
+		return cacheOffset[index];
+	}
+	else
+	{
+		length=cacheOffset[index+1]-cacheOffset[index];
+		return cacheOffset[index];
+	}
+}
+
+const std::string BloomFilter::getFileName() const
+{return filename;}
+
+std::string KVStore::getFileData(const std::string &filePath,uint32_t offset,uint32_t length)
+{
+	std::ifstream fin;
+	fin.open(filePath,std::ios::in|std::ios::binary);
+	if(fin.fail())
+	{
+		throw "Open SStable error";
+	}
+	if(!length)
+	{
+		fin.seekg(0,std::ios::beg);
+		auto beginpos=fin.tellg();
+		fin.seekg(0,std::ios::end);
+		auto endpos=fin.tellg();
+		length=endpos-beginpos;
+	}
+	if(!fin.seekg(offset,std::ios::beg))
+	{
+		throw "read SStable error";
+	}else
+	{
+		char *s=new char[length];
+		fin.read(s,length*sizeof(char));
+		std::string str(s);
+		delete s;
+		return str;
+	}
+}
+
+std::string KVStore::searchSSTable(uint64_t key)
+{
+	for(auto it=BloomFilters.rbegin();it!=BloomFilters.rend();it++)
+	{
+		if(*it==nullptr)continue;
+		if((*it)->check(key))
+		{
+			uint32_t length=0;
+			int offset=(*it)->getOffset(key,length);
+			if(offset)
+			{
+				
+			}
+		}
+	}
 }
