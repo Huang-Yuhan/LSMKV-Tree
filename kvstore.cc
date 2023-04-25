@@ -9,6 +9,7 @@ KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
 
 KVStore::~KVStore()
 {
+
 }
 
 /**
@@ -23,7 +24,7 @@ void KVStore::put(uint64_t key, const std::string &s)
 	{
 		if(!utils::dirExists("data/level-0"))
 		{
-			if(!utils::mkdir("data/level-0"))
+			if(utils::mkdir("data/level-0")!=0)
 			{
 				throw "mkdir error";
 			}
@@ -44,6 +45,7 @@ std::string KVStore::get(uint64_t key)
 	if(getData==findError)				//not find in memtable 
 	//ready search in the SSTable
 	return searchSSTable(key);
+	else return getData.value;
 }
 /**
  * Delete the given key-value pair if it exists.
@@ -52,7 +54,12 @@ std::string KVStore::get(uint64_t key)
 bool KVStore::del(uint64_t key)
 {
 	skipListData tmp=memtable.search(key);
-	if(tmp==findError||tmp.value=="~DELETED~")return false;
+	/*if(tmp==findError||tmp.value=="~DELETED~")return false;
+	skipListData delData(key,"~DELETED~");
+	memtable.insert(delData);*/
+	if(tmp.value=="~DELETED~")return false;
+	if(tmp==findError&&searchSSTable(key)=="")			//if not found
+	return false;
 	skipListData delData(key,"~DELETED~");
 	memtable.insert(delData);
 	return true;
@@ -64,6 +71,25 @@ bool KVStore::del(uint64_t key)
  */
 void KVStore::reset()
 {
+	timeStamp=0;
+	memtable.clear();
+	for(auto it = BloomFilters.begin();it!=BloomFilters.end();it++)
+	{
+		delete (*it);
+	}
+	std::vector<std::string> fileFolder;
+	int fileFolderNum=utils::scanDir("data",fileFolder);
+	for(int i=0;i<fileFolderNum;i++)
+	{
+		std::vector<std::string> files;
+		int fileNum=utils::scanDir("data/"+fileFolder[i],files);
+		for(int j=0;j<fileNum;j++)
+		{
+			std::string filePath="data/"+fileFolder[i]+"/"+files[j];
+			if(utils::rmfile(filePath.c_str()))
+				throw "rm file "+files[j]+"error";
+		}
+	}
 }
 
 /**
@@ -121,7 +147,12 @@ void KVStore::MemToSS(std::string dir)
 	memcpy(buffer+24,&keymax,sizeof(uint64_t));							//Header---keymax
 	memcpy(buffer+BFOffset,&bloomfilter,10240);							//BF
 	fileName+=std::to_string(keymin)+"_"+std::to_string(keymax)+".ss";
-	os.open(dir+"/"+fileName,std::ios::out|std::ios::binary);
+	const std::string filePath=dir+"/"+fileName;
+	os.open(filePath,std::ios::out|std::ios::binary);
+	if(os.fail())
+	{
+		throw "create file error";
+	}
 	os.write(buffer,memtable.totoalMemSize);
 	delete buffer;
 	os.close();
@@ -129,14 +160,15 @@ void KVStore::MemToSS(std::string dir)
 
 	//store the bloomfilter in the cache
 
-	BloomFilter * tmp=new BloomFilter((char*)bloomfilter,mem_key,mem_offset,fileName);
-	index=timeStamp-1;
-	while(BloomFilters.size()<index)BloomFilters.push_back(nullptr);
+	BloomFilter * tmp=new BloomFilter((char*)bloomfilter,mem_key,mem_offset,filePath);
+	index=timeStamp;
+	while(BloomFilters.size()<=index)BloomFilters.push_back(nullptr);
 	BloomFilters[index]=tmp;
+	timeStamp++;
 }
 
-BloomFilter::BloomFilter(const char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &name)
-:cacheKey(key),cacheOffset(offset),filename(name)
+BloomFilter::BloomFilter(const char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &path)
+:cacheKey(key),cacheOffset(offset),filePath(path)
 {
 	memcpy(mark,s,10240);
 
@@ -168,8 +200,8 @@ uint32_t BloomFilter::getOffset(uint64_t key,uint32_t &length)
 	}
 }
 
-const std::string BloomFilter::getFileName() const
-{return filename;}
+const std::string BloomFilter::getFilePath() const
+{return filePath;}
 
 std::string KVStore::getFileData(const std::string &filePath,uint32_t offset,uint32_t length)
 {
@@ -211,8 +243,10 @@ std::string KVStore::searchSSTable(uint64_t key)
 			int offset=(*it)->getOffset(key,length);
 			if(offset)
 			{
-				
+				const std::string s=getFileData((*it)->getFilePath(),offset,length);
+				return s;
 			}
 		}
 	}
+	return "";
 }
