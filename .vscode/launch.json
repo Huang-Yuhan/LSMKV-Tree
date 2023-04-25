@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/correctness",
-            "args": [],
+            "args": ["-v"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

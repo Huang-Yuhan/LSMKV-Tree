@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cstdint>
 #include <string>
-
 #include "test.h"
 
 class CorrectnessTest : public Test {

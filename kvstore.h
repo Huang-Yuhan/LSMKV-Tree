@@ -16,11 +16,15 @@ class BloomFilter
 		std::vector<uint32_t> cacheOffset;
 		unsigned int hash[4];
 		std::string filePath;			
+		uint64_t keymin;
+		uint64_t keymax;
 	public:
-		BloomFilter(const char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &name);
+		BloomFilter(bool *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &name);
 		uint32_t getOffset(uint64_t key,uint32_t &length);							//return 0 if not find else offset, set the data length
 		bool check(uint64_t key);
 		const std::string getFilePath()const;
+		const uint64_t getKeyMin()const;
+		const uint64_t getKeyMax()const;
 };
 
 class KVStore : public KVStoreAPI {

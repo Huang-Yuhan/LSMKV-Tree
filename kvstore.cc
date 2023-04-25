@@ -1,6 +1,7 @@
 #include "kvstore.h"
 #include <string>
 #include <algorithm>
+#include <assert.h>
 
 KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
 {
@@ -114,6 +115,7 @@ void KVStore::MemToSS(std::string dir)
 	uint64_t dataOffset=indexOffset+indexLength;
 	std::ofstream os;
 	bool bloomfilter[BloomFilterMaxSize];
+	memset(bloomfilter,0,sizeof(bloomfilter));
 	skipListNode *p=memtable.begin();
 	unsigned int hash[4]={0};		
 	uint64_t keymin,keymax;
@@ -145,7 +147,7 @@ void KVStore::MemToSS(std::string dir)
 		p=p->next[0];
 	}
 	memcpy(buffer+24,&keymax,sizeof(uint64_t));							//Header---keymax
-	memcpy(buffer+BFOffset,&bloomfilter,10240);							//BF
+	memcpy(buffer+BFOffset,bloomfilter,10240);							//BF
 	fileName+=std::to_string(keymin)+"_"+std::to_string(keymax)+".ss";
 	const std::string filePath=dir+"/"+fileName;
 	os.open(filePath,std::ios::out|std::ios::binary);
@@ -160,18 +162,24 @@ void KVStore::MemToSS(std::string dir)
 
 	//store the bloomfilter in the cache
 
-	BloomFilter * tmp=new BloomFilter((char*)bloomfilter,mem_key,mem_offset,filePath);
+	BloomFilter * tmp=new BloomFilter(bloomfilter,mem_key,mem_offset,filePath);
 	index=timeStamp;
 	while(BloomFilters.size()<=index)BloomFilters.push_back(nullptr);
 	BloomFilters[index]=tmp;
 	timeStamp++;
 }
 
-BloomFilter::BloomFilter(const char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &path)
+BloomFilter::BloomFilter(bool *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &path)
 :cacheKey(key),cacheOffset(offset),filePath(path)
 {
-	memcpy(mark,s,10240);
+	//memcpy(mark,s,10240);
 
+	for(int i=0;i<81920;i++)mark[i]=s[i];
+
+	for(int i=0;i<81920;i++)assert(mark[i]==s[i]);
+
+	keymin=key[0];
+	keymax=key[key.size()-1];
 }
 
 bool BloomFilter::check(uint64_t key)
@@ -213,7 +221,7 @@ std::string KVStore::getFileData(const std::string &filePath,uint32_t offset,uin
 	}
 	if(!length)
 	{
-		fin.seekg(0,std::ios::beg);
+		fin.seekg(offset,std::ios::beg);
 		auto beginpos=fin.tellg();
 		fin.seekg(0,std::ios::end);
 		auto endpos=fin.tellg();
@@ -224,7 +232,8 @@ std::string KVStore::getFileData(const std::string &filePath,uint32_t offset,uin
 		throw "read SStable error";
 	}else
 	{
-		char *s=new char[length];
+		char *s=new char[length+1];
+		s[length]='\0';
 		fin.read(s,length*sizeof(char));
 		std::string str(s);
 		delete s;
@@ -237,6 +246,7 @@ std::string KVStore::searchSSTable(uint64_t key)
 	for(auto it=BloomFilters.rbegin();it!=BloomFilters.rend();it++)
 	{
 		if(*it==nullptr)continue;
+		if(key<(*it)->getKeyMin()||(*it)->getKeyMax()<key)continue;;
 		if((*it)->check(key))
 		{
 			uint32_t length=0;
@@ -250,3 +260,9 @@ std::string KVStore::searchSSTable(uint64_t key)
 	}
 	return "";
 }
+
+const uint64_t BloomFilter::getKeyMax()const
+{return keymax;}
+
+const uint64_t BloomFilter::getKeyMin()const
+{return keymin;}
