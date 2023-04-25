@@ -3,7 +3,7 @@
 
 # Relative path conversion top directories.
 set(CMAKE_RELATIVE_PATH_TOP_SOURCE "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree")
-set(CMAKE_RELATIVE_PATH_TOP_BINARY "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build")
+set(CMAKE_RELATIVE_PATH_TOP_BINARY "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree")
 
 # Force unix paths in dependencies.
 set(CMAKE_FORCE_UNIX_PATHS 1)

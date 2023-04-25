@@ -56,7 +56,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build
+CMAKE_BINARY_DIR = /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree
 
 # Include any dependencies generated for this target.
 include CMakeFiles/correctness.dir/depend.make
@@ -70,9 +70,9 @@ include CMakeFiles/correctness.dir/progress.make
 include CMakeFiles/correctness.dir/flags.make
 
 CMakeFiles/correctness.dir/correctness.cc.o: CMakeFiles/correctness.dir/flags.make
-CMakeFiles/correctness.dir/correctness.cc.o: ../correctness.cc
+CMakeFiles/correctness.dir/correctness.cc.o: correctness.cc
 CMakeFiles/correctness.dir/correctness.cc.o: CMakeFiles/correctness.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/correctness.dir/correctness.cc.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/correctness.dir/correctness.cc.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/correctness.dir/correctness.cc.o -MF CMakeFiles/correctness.dir/correctness.cc.o.d -o CMakeFiles/correctness.dir/correctness.cc.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/correctness.cc
 
 CMakeFiles/correctness.dir/correctness.cc.i: cmake_force
@@ -84,9 +84,9 @@ CMakeFiles/correctness.dir/correctness.cc.s: cmake_force
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/correctness.cc -o CMakeFiles/correctness.dir/correctness.cc.s
 
 CMakeFiles/correctness.dir/skiplist.cpp.o: CMakeFiles/correctness.dir/flags.make
-CMakeFiles/correctness.dir/skiplist.cpp.o: ../skiplist.cpp
+CMakeFiles/correctness.dir/skiplist.cpp.o: skiplist.cpp
 CMakeFiles/correctness.dir/skiplist.cpp.o: CMakeFiles/correctness.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/correctness.dir/skiplist.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/correctness.dir/skiplist.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/correctness.dir/skiplist.cpp.o -MF CMakeFiles/correctness.dir/skiplist.cpp.o.d -o CMakeFiles/correctness.dir/skiplist.cpp.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/skiplist.cpp
 
 CMakeFiles/correctness.dir/skiplist.cpp.i: cmake_force
@@ -98,9 +98,9 @@ CMakeFiles/correctness.dir/skiplist.cpp.s: cmake_force
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/skiplist.cpp -o CMakeFiles/correctness.dir/skiplist.cpp.s
 
 CMakeFiles/correctness.dir/kvstore.cc.o: CMakeFiles/correctness.dir/flags.make
-CMakeFiles/correctness.dir/kvstore.cc.o: ../kvstore.cc
+CMakeFiles/correctness.dir/kvstore.cc.o: kvstore.cc
 CMakeFiles/correctness.dir/kvstore.cc.o: CMakeFiles/correctness.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/correctness.dir/kvstore.cc.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/correctness.dir/kvstore.cc.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/correctness.dir/kvstore.cc.o -MF CMakeFiles/correctness.dir/kvstore.cc.o.d -o CMakeFiles/correctness.dir/kvstore.cc.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/kvstore.cc
 
 CMakeFiles/correctness.dir/kvstore.cc.i: cmake_force
@@ -125,7 +125,7 @@ correctness: CMakeFiles/correctness.dir/skiplist.cpp.o
 correctness: CMakeFiles/correctness.dir/kvstore.cc.o
 correctness: CMakeFiles/correctness.dir/build.make
 correctness: CMakeFiles/correctness.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable correctness"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable correctness"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/correctness.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -137,6 +137,6 @@ CMakeFiles/correctness.dir/clean:
 .PHONY : CMakeFiles/correctness.dir/clean
 
 CMakeFiles/correctness.dir/depend:
-	cd /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles/correctness.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles/correctness.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/correctness.dir/depend
 

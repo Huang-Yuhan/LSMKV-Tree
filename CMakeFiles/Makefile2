@@ -57,7 +57,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build
+CMAKE_BINARY_DIR = /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -81,14 +81,14 @@ clean: CMakeFiles/correctness.dir/clean
 CMakeFiles/correctness.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/correctness.dir/build.make CMakeFiles/correctness.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/correctness.dir/build.make CMakeFiles/correctness.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles --progress-num=1,2,3,4 "Built target correctness"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles --progress-num=1,2,3,4 "Built target correctness"
 .PHONY : CMakeFiles/correctness.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/correctness.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles 4
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/correctness.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles 0
 .PHONY : CMakeFiles/correctness.dir/rule
 
 # Convenience name for target.

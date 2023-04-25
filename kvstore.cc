@@ -177,10 +177,6 @@ void KVStore::MemToSS(std::string dir)
 BloomFilter::BloomFilter(char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &path)
 :cacheKey(key),cacheOffset(offset),filePath(path)
 {
-	//memcpy(mark,s,10240);
-	//for(int i=0;i<81920;i++)mark[i]=s[i];
-
-	//for(int i=0;i<81920;i++)assert(mark[i]==s[i]);
 	memcpyChartoBool(mark,s,10240);
 	keymin=key[0];
 	keymax=key[key.size()-1];

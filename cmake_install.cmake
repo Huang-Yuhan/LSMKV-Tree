@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
