@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <assert.h>
 
+void memcpyBoolToChar(char *_dst,bool *_src,int byte_size);
+void memcpyChartoBool(bool *_dst,char *_src,int byte_size);
+
+
 KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
 {
 	timeStamp=0;
@@ -147,7 +151,7 @@ void KVStore::MemToSS(std::string dir)
 		p=p->next[0];
 	}
 	memcpy(buffer+24,&keymax,sizeof(uint64_t));							//Header---keymax
-	memcpy(buffer+BFOffset,bloomfilter,10240);							//BF
+	memcpyBoolToChar(buffer+BFOffset/sizeof(char),bloomfilter,10240);							//BF
 	fileName+=std::to_string(keymin)+"_"+std::to_string(keymax)+".ss";
 	const std::string filePath=dir+"/"+fileName;
 	os.open(filePath,std::ios::out|std::ios::binary);
@@ -156,28 +160,28 @@ void KVStore::MemToSS(std::string dir)
 		throw "create file error";
 	}
 	os.write(buffer,memtable.totoalMemSize);
-	delete buffer;
 	os.close();
 
 
 	//store the bloomfilter in the cache
 
-	BloomFilter * tmp=new BloomFilter(bloomfilter,mem_key,mem_offset,filePath);
+	BloomFilter * tmp=new BloomFilter(buffer+BFOffset/sizeof(char),mem_key,mem_offset,filePath);
 	index=timeStamp;
 	while(BloomFilters.size()<=index)BloomFilters.push_back(nullptr);
 	BloomFilters[index]=tmp;
 	timeStamp++;
+
+	delete buffer;
 }
 
-BloomFilter::BloomFilter(bool *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &path)
+BloomFilter::BloomFilter(char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &path)
 :cacheKey(key),cacheOffset(offset),filePath(path)
 {
 	//memcpy(mark,s,10240);
+	//for(int i=0;i<81920;i++)mark[i]=s[i];
 
-	for(int i=0;i<81920;i++)mark[i]=s[i];
-
-	for(int i=0;i<81920;i++)assert(mark[i]==s[i]);
-
+	//for(int i=0;i<81920;i++)assert(mark[i]==s[i]);
+	memcpyChartoBool(mark,s,10240);
 	keymin=key[0];
 	keymax=key[key.size()-1];
 }
@@ -266,3 +270,34 @@ const uint64_t BloomFilter::getKeyMax()const
 
 const uint64_t BloomFilter::getKeyMin()const
 {return keymin;}
+
+void memcpyBoolToChar(char *_dst,bool *_src,int byte_size)
+{
+	char *dst=_dst;
+	bool *src=_src;
+	for(int i=0;i<byte_size;i++)
+	{
+		char sum=0;
+		for(int j=0;j<8;j++)
+		sum=sum<<1|src[j];
+		src+=8;
+		*dst=sum;
+		dst++;
+	}
+}	
+
+void memcpyChartoBool(bool *_dst,char *_src,int byte_size)
+{
+	bool *dst=_dst;
+	char *src=_src;
+	for(int i=0;i<byte_size;i++)
+	{
+		char tmp=*(src+i);
+		for(int j=7;j>=0;j--)
+		{
+			dst[j]=tmp&1;
+			tmp>>=1;
+		}
+		dst+=8;
+	}
+}
