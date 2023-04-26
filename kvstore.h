@@ -35,9 +35,10 @@ private:
 	uint64_t timeStamp;				
 	std::vector<BloomFilter*> BloomFilters;
 
-	void MemToSS(std::string dir);
+	void MemToSS(const std::string &dir);
 	std::string getFileData(const std::string &filePath,uint32_t offset,uint32_t length);
 	std::string searchSSTable(uint64_t key);
+	BloomFilter* readSSTable(const std::string &filePath);
 public:
 	KVStore(const std::string &dir);
 
