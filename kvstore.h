@@ -18,13 +18,17 @@ class BloomFilter
 		std::string filePath;			
 		uint64_t keymin;
 		uint64_t keymax;
+		uint64_t BtimeStamp;
+		uint64_t keyNum;
 	public:
-		BloomFilter(char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &name);
+		BloomFilter(uint64_t Stamp,char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &name);
 		uint32_t getOffset(uint64_t key,uint32_t &length);							//return 0 if not find else offset, set the data length
 		bool check(uint64_t key);
-		const std::string getFilePath()const;
-		const uint64_t getKeyMin()const;
-		const uint64_t getKeyMax()const;
+		std::string getFilePath()const;
+		uint64_t getKeyMin()const;
+		uint64_t getKeyMax()const;
+		uint64_t getTimeStamp()const;
+		uint64_t getKeyNum()const;
 };
 
 class KVStore : public KVStoreAPI {
@@ -34,11 +38,17 @@ private:
 	SkipList memtable;
 	uint64_t timeStamp;				
 	std::vector<BloomFilter*> BloomFilters;
+	
+	std::vector<std::pair<int,std::string> > levelConfiguration;
 
 	void MemToSS(const std::string &dir);
 	std::string getFileData(const std::string &filePath,uint32_t offset,uint32_t length);
 	std::string searchSSTable(uint64_t key);
 	BloomFilter* readSSTable(const std::string &filePath);
+	void compaction(int level);
+	void readConfiguration();
+	void selectX(int level,std::vector<std::string> &s);
+	void selectXPlus(int level,std::vector<std::string> &s);
 public:
 	KVStore(const std::string &dir);
 
@@ -53,4 +63,5 @@ public:
 	void reset() override;
 
 	void scan(uint64_t key1, uint64_t key2, std::list<std::pair<uint64_t, std::string> > &list) override;
+
 };

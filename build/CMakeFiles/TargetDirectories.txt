@@ -1,3 +1,4 @@
 /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles/correctness.dir
+/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles/persistence.dir
 /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles/edit_cache.dir
 /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build/CMakeFiles/rebuild_cache.dir

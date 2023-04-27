@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -rdynamic CMakeFiles/persistence.dir/persistence.cc.o CMakeFiles/persistence.dir/skiplist.cpp.o CMakeFiles/persistence.dir/kvstore.cc.o -o persistence 

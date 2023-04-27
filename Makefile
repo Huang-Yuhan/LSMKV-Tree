@@ -129,6 +129,19 @@ correctness/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/correctness.dir/build.make CMakeFiles/correctness.dir/build
 .PHONY : correctness/fast
 
+#=============================================================================
+# Target rules for targets named persistence
+
+# Build rule for target.
+persistence: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 persistence
+.PHONY : persistence
+
+# fast build rule for target.
+persistence/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/build
+.PHONY : persistence/fast
+
 correctness.o: correctness.cc.o
 .PHONY : correctness.o
 
@@ -159,6 +172,7 @@ kvstore.o: kvstore.cc.o
 # target to build an object file
 kvstore.cc.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/correctness.dir/build.make CMakeFiles/correctness.dir/kvstore.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/kvstore.cc.o
 .PHONY : kvstore.cc.o
 
 kvstore.i: kvstore.cc.i
@@ -167,6 +181,7 @@ kvstore.i: kvstore.cc.i
 # target to preprocess a source file
 kvstore.cc.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/correctness.dir/build.make CMakeFiles/correctness.dir/kvstore.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/kvstore.cc.i
 .PHONY : kvstore.cc.i
 
 kvstore.s: kvstore.cc.s
@@ -175,7 +190,32 @@ kvstore.s: kvstore.cc.s
 # target to generate assembly for a file
 kvstore.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/correctness.dir/build.make CMakeFiles/correctness.dir/kvstore.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/kvstore.cc.s
 .PHONY : kvstore.cc.s
+
+persistence.o: persistence.cc.o
+.PHONY : persistence.o
+
+# target to build an object file
+persistence.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/persistence.cc.o
+.PHONY : persistence.cc.o
+
+persistence.i: persistence.cc.i
+.PHONY : persistence.i
+
+# target to preprocess a source file
+persistence.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/persistence.cc.i
+.PHONY : persistence.cc.i
+
+persistence.s: persistence.cc.s
+.PHONY : persistence.s
+
+# target to generate assembly for a file
+persistence.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/persistence.cc.s
+.PHONY : persistence.cc.s
 
 skiplist.o: skiplist.cpp.o
 .PHONY : skiplist.o
@@ -183,6 +223,7 @@ skiplist.o: skiplist.cpp.o
 # target to build an object file
 skiplist.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/correctness.dir/build.make CMakeFiles/correctness.dir/skiplist.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/skiplist.cpp.o
 .PHONY : skiplist.cpp.o
 
 skiplist.i: skiplist.cpp.i
@@ -191,6 +232,7 @@ skiplist.i: skiplist.cpp.i
 # target to preprocess a source file
 skiplist.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/correctness.dir/build.make CMakeFiles/correctness.dir/skiplist.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/skiplist.cpp.i
 .PHONY : skiplist.cpp.i
 
 skiplist.s: skiplist.cpp.s
@@ -199,6 +241,7 @@ skiplist.s: skiplist.cpp.s
 # target to generate assembly for a file
 skiplist.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/correctness.dir/build.make CMakeFiles/correctness.dir/skiplist.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/skiplist.cpp.s
 .PHONY : skiplist.cpp.s
 
 # Help Target
@@ -210,12 +253,16 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... correctness"
+	@echo "... persistence"
 	@echo "... correctness.o"
 	@echo "... correctness.i"
 	@echo "... correctness.s"
 	@echo "... kvstore.o"
 	@echo "... kvstore.i"
 	@echo "... kvstore.s"
+	@echo "... persistence.o"
+	@echo "... persistence.i"
+	@echo "... persistence.s"
 	@echo "... skiplist.o"
 	@echo "... skiplist.i"
 	@echo "... skiplist.s"

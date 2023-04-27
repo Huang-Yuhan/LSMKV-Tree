@@ -29,6 +29,10 @@ KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
 			std::istringstream is(fileSplit[0]);
 			is>>timeStampTmp;
 			timeStamp=std::max(timeStamp,timeStampTmp);
+			if(filePath=="data/level-0/258_16881_0_32767.sst")
+			{
+				int x=1;
+			}
 			BloomFilter *cache=readSSTable(filePath);
 			BloomFilters.push_back(cache);
 		}
@@ -75,12 +79,14 @@ void KVStore::put(uint64_t key, const std::string &s)
  */
 std::string KVStore::get(uint64_t key)
 {
+	std::string s;
 	skipListData getData= memtable.search(key);
 	if(getData.value=="~DELETED~")return "";
 	if(getData==findError)				//not find in memtable 
 	//ready search in the SSTable
-	return searchSSTable(key);
-	else return getData.value;
+	s= searchSSTable(key);
+	else s= getData.value;
+	return s;
 }
 /**
  * Delete the given key-value pair if it exists.
@@ -112,6 +118,7 @@ void KVStore::reset()
 	{
 		delete (*it);
 	}
+	BloomFilters.clear();
 	std::vector<std::string> fileFolder;
 	int fileFolderNum=utils::scanDir("data",fileFolder);
 	for(int i=0;i<fileFolderNum;i++)
@@ -141,6 +148,7 @@ void KVStore::scan(uint64_t key1, uint64_t key2, std::list<std::pair<uint64_t, s
 // convert the memtable to SStable
 void KVStore::MemToSS(const std::string &dir)
 {
+	if(memtable.keyNum==0)return;
 	std::string fileName=std::to_string(timeStamp)+"_"+std::to_string(memtable.keyNum)+"_";
 	uint64_t headerOffset=0;
 	uint64_t BFOffset=32;
@@ -182,7 +190,7 @@ void KVStore::MemToSS(const std::string &dir)
 	}
 	memcpy(buffer+24,&keymax,sizeof(uint64_t));							//Header---keymax
 	memcpyBoolToChar(buffer+BFOffset/sizeof(char),bloomfilter,10240);							//BF
-	fileName+=std::to_string(keymin)+"_"+std::to_string(keymax)+".ss";
+	fileName+=std::to_string(keymin)+"_"+std::to_string(keymax)+".sst";
 	const std::string filePath=dir+"/"+fileName;
 	os.open(filePath,std::ios::out|std::ios::binary);
 	if(os.fail())
@@ -195,19 +203,21 @@ void KVStore::MemToSS(const std::string &dir)
 
 	//store the bloomfilter in the cache
 
-	BloomFilter * tmp=new BloomFilter(buffer+BFOffset/sizeof(char),mem_key,mem_offset,filePath);
+	BloomFilter * tmp=new BloomFilter(timeStamp,buffer+BFOffset/sizeof(char),mem_key,mem_offset,filePath);
 	BloomFilters.push_back(tmp);
 	timeStamp++;
 
 	delete[] buffer;
 }
 
-BloomFilter::BloomFilter(char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &path)
-:cacheKey(key),cacheOffset(offset),filePath(path)
+BloomFilter::BloomFilter(uint64_t Stamp,char *s,const std::vector<uint64_t> &key,const std::vector<uint32_t> &offset,const std::string &path)
+:cacheKey(key),cacheOffset(offset),filePath(path),BtimeStamp(Stamp)
 {
 	memcpyChartoBool(mark,s,10240);
 	keymin=key[0];
 	keymax=key[key.size()-1];
+	keyNum=key.size();
+
 }
 
 bool BloomFilter::check(uint64_t key)
@@ -236,7 +246,7 @@ uint32_t BloomFilter::getOffset(uint64_t key,uint32_t &length)
 	}
 }
 
-const std::string BloomFilter::getFilePath() const
+std::string BloomFilter::getFilePath() const
 {return filePath;}
 
 std::string KVStore::getFileData(const std::string &filePath,uint32_t offset,uint32_t length)
@@ -271,9 +281,12 @@ std::string KVStore::getFileData(const std::string &filePath,uint32_t offset,uin
 
 std::string KVStore::searchSSTable(uint64_t key)
 {
+	std::string ans="";
+	int dataTimeStamp=0;
 	for(auto it=BloomFilters.rbegin();it!=BloomFilters.rend();it++)
 	{
 		if(*it==nullptr)continue;
+		if(dataTimeStamp>(*it)->getTimeStamp())continue;
 		if(key<(*it)->getKeyMin()||(*it)->getKeyMax()<key)continue;;
 		if((*it)->check(key))
 		{
@@ -282,17 +295,19 @@ std::string KVStore::searchSSTable(uint64_t key)
 			if(offset)
 			{
 				const std::string s=getFileData((*it)->getFilePath(),offset,length);
-				return s;
+				ans=s;
+				dataTimeStamp=(*it)->getTimeStamp();
 			}
 		}
 	}
-	return "";
+	if(ans=="~DELETED~")ans="";
+	return ans;
 }
 
-const uint64_t BloomFilter::getKeyMax()const
+uint64_t BloomFilter::getKeyMax()const
 {return keymax;}
 
-const uint64_t BloomFilter::getKeyMin()const
+uint64_t BloomFilter::getKeyMin()const
 {return keymin;}
 
 void memcpyBoolToChar(char *_dst,bool *_src,int byte_size)
@@ -339,7 +354,7 @@ BloomFilter* KVStore::readSSTable(const std::string &filePath)
 	std::string fileName=fileSplit.back();
 	fileSplit.clear();
 	split(fileName,fileSplit,'_');
-	std::istringstream is(fileSplit[1]);
+	std::istringstream is(fileSplit[1]+" "+fileSplit[0]);
 	uint64_t SSTableTimeStamp;
 	uint64_t keyNum;
 	uint64_t keyMin,keyMax;
@@ -348,31 +363,36 @@ BloomFilter* KVStore::readSSTable(const std::string &filePath)
 
 	char *buffer;
 
-	is>>keyNum;
+	is>>keyNum>>SSTableTimeStamp;
 
 	int bufferLength=32+10240;
 
 	buffer=new char[bufferLength];
-	fin.read(buffer,32+10240);
+	fin.read(buffer,bufferLength);
 
+	std::ofstream fout("err/level-0/"+fileName);
+	#pragma pack(4)
 	struct KeyOffset
 	{
 		uint64_t key;
 		uint32_t offset;
 	}*KO;
+	#pragma pack()
 	KO=new KeyOffset[keyNum];
-	fin.read((char*)KO,keyNum*sizeof(KeyOffset));
-
+	fin.read((char*)KO,keyNum*(sizeof(uint64_t)+sizeof(uint32_t)));
 	std::vector<uint64_t> key;
 	std::vector<uint32_t> offset;
-	for(int i=0;i<keyNum;i++)
+	for(int i=0;i<keyNum;i++)		//has some problem ?
 	{
 		key.push_back(KO[i].key);
 		offset.push_back(KO[i].offset);
+//		fout<<KO[i].key<<" "<<KO[i].offset<<"\n";
 	}
-	BloomFilter *tmp=new BloomFilter(&buffer[32],key,offset,filePath);
+	BloomFilter *tmp=new BloomFilter(SSTableTimeStamp,&buffer[32],key,offset,filePath);
 	delete[] KO;
 	delete[] buffer;
+	fin.close();
+	fout.close();
 	return tmp;
 }
 
@@ -388,4 +408,56 @@ void split(const std::string &s,std::vector<std::string> &v,char delim)
 		}
 	}
 	v.push_back(s.substr(beginpos,s.size()-beginpos));
+}
+
+void KVStore::compaction(int level)
+{
+	//check if the compaction needed
+	while(level>=levelConfiguration.size())levelConfiguration.push_back(std::make_pair(levelConfiguration.back().first*2,"Leveling"));
+	int fileMaxNum=levelConfiguration[level].first;
+	std::string &fileMode=levelConfiguration[level].second;
+
+	std::string dir="data/level-"+std::to_string(level);
+	std::vector<std::string> files;
+	utils::scanDir(dir,files);
+	if(files.size()<=fileMaxNum)return;				//do not need to compaction
+
+	//Select SSTable
+	std::vector<std::string> seleceXFile,selectXPlusFile;
+	selectX(level,seleceXFile);
+	selectXPlus(level+1,selectXPlusFile);
+
+	// SSTable merge
+}
+
+void KVStore::readConfiguration()
+{
+	std::ifstream fin;
+	fin.open("default.conf");
+	int level,fileMaxNum;
+	std::string fileMode;
+	while(fin>>level>>fileMaxNum>>fileMode)
+	{
+		levelConfiguration.push_back(std::make_pair(fileMaxNum,fileMode));
+	}
+}
+
+void KVStore::selectX(int level,std::vector<std::string> &selectFile)
+{
+
+}
+
+void KVStore::selectXPlus(int level,std::vector<std::string> &selectFile)
+{
+	
+}
+
+uint64_t BloomFilter::getKeyNum()const
+{
+	return keyNum;
+}
+
+uint64_t BloomFilter::getTimeStamp()const
+{
+	return BtimeStamp;
 }

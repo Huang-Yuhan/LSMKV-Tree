@@ -64,6 +64,7 @@ CMAKE_BINARY_DIR = /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree
 
 # The main recursive "all" target.
 all: CMakeFiles/correctness.dir/all
+all: CMakeFiles/persistence.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -72,6 +73,7 @@ preinstall:
 
 # The main recursive "clean" target.
 clean: CMakeFiles/correctness.dir/clean
+clean: CMakeFiles/persistence.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -99,6 +101,32 @@ correctness: CMakeFiles/correctness.dir/rule
 CMakeFiles/correctness.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/correctness.dir/build.make CMakeFiles/correctness.dir/clean
 .PHONY : CMakeFiles/correctness.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/persistence.dir
+
+# All Build rule for target.
+CMakeFiles/persistence.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles --progress-num=5,6,7,8 "Built target persistence"
+.PHONY : CMakeFiles/persistence.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/persistence.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles 4
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/persistence.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/CMakeFiles 0
+.PHONY : CMakeFiles/persistence.dir/rule
+
+# Convenience name for target.
+persistence: CMakeFiles/persistence.dir/rule
+.PHONY : persistence
+
+# clean rule for target.
+CMakeFiles/persistence.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/clean
+.PHONY : CMakeFiles/persistence.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

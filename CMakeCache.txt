@@ -145,7 +145,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=correctness
+CMAKE_PROJECT_NAME:STATIC=persistence
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -217,6 +217,15 @@ correctness_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
 correctness_SOURCE_DIR:STATIC=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree
+
+//Value Computed by CMake
+persistence_BINARY_DIR:STATIC=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree
+
+//Value Computed by CMake
+persistence_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+persistence_SOURCE_DIR:STATIC=/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree
 
 
 ########################
