@@ -33,3 +33,6 @@
 
 # SSTable
 *.sst
+*.make
+*.cmake
+*.ts

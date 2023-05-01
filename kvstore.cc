@@ -519,3 +519,17 @@ void KVStore::selectXPlus(int level, bool mode, std::vector<BloomFilter *> &sele
 		}
 	}
 }
+
+void KVStore::mergeSort(std::vector<BloomFilter*> &selectd)
+{
+	//BloomFilters need delete the one in selected
+	std::sort(BloomFilters.begin(),BloomFilters.end(),cmp);
+
+	for(int i=0;i<selectd.size();i++)
+	{
+		auto it=lower_bound(BloomFilters.begin(),BloomFilters.end(),cmp);
+		BloomFilters.erase(it);
+	}
+
+	// up to now the sstable in selectd have clear their cache in KVStore(SSTalbeFiles & BloomFilters)
+}
