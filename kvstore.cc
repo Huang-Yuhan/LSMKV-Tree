@@ -4,9 +4,14 @@
 #include <assert.h>
 #include <sstream>
 
+const bool MODE_TIERING=false;
+const bool MODE_LEVELING=true;
+
 void memcpyBoolToChar(char *_dst,bool *_src,int byte_size);
 void memcpyChartoBool(bool *_dst,char *_src,int byte_size);
 void split(const std::string &s,std::vector<std::string> &v,char delim);
+bool cmp(BloomFilter*a,BloomFilter *b);
+
 
 KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
 {
@@ -20,6 +25,7 @@ KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
 	{
 		std::vector<std::string> files;
 		int fileNum=utils::scanDir("data/"+fileFolder[i],files);
+		std::vector<BloomFilter*> sstablefiles;
 		for(int j=0;j<fileNum;j++)
 		{
 			std::string filePath="data/"+fileFolder[i]+"/"+files[j];
@@ -29,14 +35,15 @@ KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
 			std::istringstream is(fileSplit[0]);
 			is>>timeStampTmp;
 			timeStamp=std::max(timeStamp,timeStampTmp);
-			if(filePath=="data/level-0/258_16881_0_32767.sst")
-			{
-				int x=1;
-			}
 			BloomFilter *cache=readSSTable(filePath);
 			BloomFilters.push_back(cache);
+			sstablefiles.push_back(cache);
 		}
+		std::sort(sstablefiles.begin(),sstablefiles.end(),cmp);
+		SSTalbeFiles.push_back(sstablefiles);
 	}
+
+	readConfiguration();
 }
 
 KVStore::~KVStore()
@@ -412,22 +419,22 @@ void split(const std::string &s,std::vector<std::string> &v,char delim)
 
 void KVStore::compaction(int level)
 {
-	//check if the compaction needed
-	while(level>=levelConfiguration.size())levelConfiguration.push_back(std::make_pair(levelConfiguration.back().first*2,"Leveling"));
-	int fileMaxNum=levelConfiguration[level].first;
-	std::string &fileMode=levelConfiguration[level].second;
+	while (level+1>=levelConfiguration.size())levelConfiguration.push_back(std::make_pair(levelConfiguration.back().first*2,"Leveling"));
 
-	std::string dir="data/level-"+std::to_string(level);
-	std::vector<std::string> files;
-	utils::scanDir(dir,files);
-	if(files.size()<=fileMaxNum)return;				//do not need to compaction
+	if(SSTalbeFiles[level].size()<=levelConfiguration[level].first)return;
 
-	//Select SSTable
-	std::vector<std::string> seleceXFile,selectXPlusFile;
-	selectX(level,seleceXFile);
-	selectXPlus(level+1,selectXPlusFile);
+	int fileLevelXNumMax=levelConfiguration[level].first;
+	bool fileMode=levelConfiguration[level].second=="Tiering";
 
-	// SSTable merge
+	std::vector<BloomFilter*> selected;
+	//Select files
+	selectXPlus(level+1,fileMode,selected);
+	selectX(level,fileMode,selected);
+
+	mergeSort(selected);
+
+	compaction(level+1);
+
 }
 
 void KVStore::readConfiguration()
@@ -442,16 +449,6 @@ void KVStore::readConfiguration()
 	}
 }
 
-void KVStore::selectX(int level,std::vector<std::string> &selectFile)
-{
-
-}
-
-void KVStore::selectXPlus(int level,std::vector<std::string> &selectFile)
-{
-	
-}
-
 uint64_t BloomFilter::getKeyNum()const
 {
 	return keyNum;
@@ -460,4 +457,65 @@ uint64_t BloomFilter::getKeyNum()const
 uint64_t BloomFilter::getTimeStamp()const
 {
 	return BtimeStamp;
+}
+
+bool cmp(BloomFilter *a,BloomFilter *b)
+{
+	if(a->getTimeStamp()!=b->getTimeStamp())return a->getTimeStamp()<b->getTimeStamp();
+	if(a->getKeyMin()!=b->getKeyMin())return a->getKeyMin()<b->getKeyMin();
+	return a->getKeyMax()<b->getKeyMax();
+}
+
+void KVStore::selectX(int level, bool mode, std::vector<BloomFilter *> &selected)
+{
+	std::vector<BloomFilter *> &files=SSTalbeFiles[level];
+	if(mode==MODE_TIERING)// select all files
+	{
+		for(int i=0;i<files.size();i++)
+		{
+			selected.push_back(files[i]);
+		}
+		files.clear();
+	}
+	else
+	{
+		std::sort(files.begin(),files.end(),cmp);
+		int endpos=files.size()-levelConfiguration[level].first;
+		for(int i=0;i<endpos;i++)selected.push_back(files[i]);
+		files.erase(files.begin(),files.begin()+endpos);
+	}
+}
+
+void KVStore::selectXPlus(int level, bool mode, std::vector<BloomFilter *> &selected)
+{
+	std::vector<BloomFilter *> &files=SSTalbeFiles[level];
+	std::vector<BloomFilter *> &preFiles=SSTalbeFiles[level-1];
+	if(mode==MODE_TIERING)// select all files
+	{
+		return;
+	}
+	else
+	{
+		uint64_t keymin,keymax;
+		keymin=preFiles[0]->getKeyMin();
+		keymax=preFiles[0]->getKeyMax();
+		for(int i=1;i<=preFiles.size();i++)
+		{
+			keymin=std::min(keymin,preFiles[i]->getKeyMin());
+			keymax=std::max(keymax,preFiles[i]->getKeyMax());
+		}
+
+		for(auto it=files.begin();it!=files.end();)
+		{
+			if(
+				keymin<=(*it)->getKeyMin()&&(*it)->getKeyMin()<=keymax ||
+				keymin<=(*it)->getKeyMax()&&(*it)->getKeyMax()<=keymax 
+			)
+			{
+				selected.push_back(*it);
+				it=files.erase(it);
+			}
+			else it++;
+		}
+	}
 }

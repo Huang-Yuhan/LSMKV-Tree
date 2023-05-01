@@ -38,7 +38,7 @@ private:
 	SkipList memtable;
 	uint64_t timeStamp;				
 	std::vector<BloomFilter*> BloomFilters;
-	
+	std::vector< std::vector<BloomFilter *> > SSTalbeFiles;
 	std::vector<std::pair<int,std::string> > levelConfiguration;
 
 	void MemToSS(const std::string &dir);
@@ -47,8 +47,9 @@ private:
 	BloomFilter* readSSTable(const std::string &filePath);
 	void compaction(int level);
 	void readConfiguration();
-	void selectX(int level,std::vector<std::string> &s);
-	void selectXPlus(int level,std::vector<std::string> &s);
+	void selectX(int level,bool mode,std::vector<BloomFilter*> &selected);
+	void selectXPlus(int level,bool mode,std::vector<BloomFilter*> &selected);
+	void mergeSort(	std::vector<BloomFilter*> &selectd);
 public:
 	KVStore(const std::string &dir);
 

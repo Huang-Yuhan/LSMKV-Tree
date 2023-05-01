@@ -32,3 +32,34 @@ For the test files, of course you could modify it to debug your programs. But re
 
 Good luck :)
 
+# Some problem
+
+## 1
+
+when use such code
+
+```cpp
+struct KeyOffset
+{
+    uint64_t key;
+    uint32_t offset;
+}*KO;
+KO=new KeyOffset[keyNum];
+fin.read((char*)KO,keyNum*(sizeof(uint64_t)+sizeof(uint32_t)));
+```
+
+there is some problem in read()
+
+finally i found that i need to add some macro
+
+```cpp
+#pragma pack(4)
+struct KeyOffset
+{
+    uint64_t key;
+    uint32_t offset;
+}*KO;
+#pragma pack()
+KO=new KeyOffset[keyNum];
+fin.read((char*)KO,keyNum*(sizeof(uint64_t)+sizeof(uint32_t)));
+```
