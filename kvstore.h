@@ -12,8 +12,7 @@ class BloomFilter
 {
 	private:
 		bool mark[81920];				//Bloom Filter
-		std::vector<uint64_t> cacheKey;
-		std::vector<uint32_t> cacheOffset;
+		
 		unsigned int hash[4];
 		std::string filePath;			
 		uint64_t keymin;
@@ -29,6 +28,8 @@ class BloomFilter
 		uint64_t getKeyMax()const;
 		uint64_t getTimeStamp()const;
 		uint64_t getKeyNum()const;
+		std::vector<uint64_t> cacheKey;
+		std::vector<uint32_t> cacheOffset;
 };
 
 class KVStore : public KVStoreAPI {

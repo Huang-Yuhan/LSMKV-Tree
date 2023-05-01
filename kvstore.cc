@@ -520,6 +520,20 @@ void KVStore::selectXPlus(int level, bool mode, std::vector<BloomFilter *> &sele
 	}
 }
 
+struct mergeSortNode
+{
+	uint64_t key;
+	uint64_t timeStamp;
+	uint32_t offset;
+	uint32_t length;
+	char *s;
+};
+
+bool mergeSortCmp(mergeSortNode &a,mergeSortNode &b)
+{
+	return a.key==b.key?a.timeStamp>b.timeStamp:a.key<b.key;
+}
+
 void KVStore::mergeSort(std::vector<BloomFilter*> &selectd)
 {
 	//BloomFilters need delete the one in selected
@@ -531,5 +545,45 @@ void KVStore::mergeSort(std::vector<BloomFilter*> &selectd)
 		BloomFilters.erase(it);
 	}
 
-	// up to now the sstable in selectd have clear their cache in KVStore(SSTalbeFiles & BloomFilters)
+	// up to now the sstable in selectd have cleared their cache in KVStore(SSTalbeFiles & BloomFilters)
+
+	char *buffer;
+	std::vector<char *> pool;		//delete all buffer in the end
+	std::vector<mergeSortNode> nodes;
+	std::ifstream fin;
+	int filelength;
+	for(int i=0;i<selectd.size();i++)
+	{
+		fin.open(selectd[i]->getFilePath(),std::ios::in|std::ios::binary);
+		auto beginpos=fin.tellg();
+		fin.seekg(0,std::ios::end);
+		auto endpos=fin.tellg();
+		filelength=endpos-beginpos;
+		fin.seekg(0,std::ios::beg);
+		if(fin.fail()){throw "Open file "+selectd[i]->getFilePath()+" Error";}
+		buffer=new char[filelength+1];
+		buffer[filelength]='\0';
+		fin.read(buffer,filelength);
+		pool.push_back(buffer);
+
+		for(int j=0;j+1<selectd[i]->cacheKey.size();j++)
+		{
+			nodes.push_back(mergeSortNode{
+				selectd[i]->cacheKey[j],
+				selectd[i]->getTimeStamp(),
+				selectd[i]->cacheOffset[j],
+				selectd[i]->cacheOffset[j+1]-selectd[i]->cacheOffset[j],
+				buffer
+			});
+		}
+		nodes.push_back(mergeSortNode{
+				selectd[i]->cacheKey.back(),
+				selectd[i]->getTimeStamp(),
+				selectd[i]->cacheOffset.back(),
+				filelength-selectd[i]->cacheOffset.back(),
+				buffer
+			});
+	}
+
+	std::sort(nodes.begin(),nodes.end(),mergeSortCmp);
 }
