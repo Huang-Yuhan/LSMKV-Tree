@@ -50,7 +50,7 @@ private:
 	void readConfiguration();
 	void selectX(int level,bool mode,std::vector<BloomFilter*> &selected);
 	void selectXPlus(int level,bool mode,std::vector<BloomFilter*> &selected);
-	void mergeSort(	std::vector<BloomFilter*> &selectd);
+	void mergeSort(	std::vector<BloomFilter*> &selectd,int level);
 public:
 	KVStore(const std::string &dir);
 

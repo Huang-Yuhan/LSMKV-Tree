@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <sstream>
+#include <limits>
 
 const bool MODE_TIERING=false;
 const bool MODE_LEVELING=true;
@@ -77,6 +78,7 @@ void KVStore::put(uint64_t key, const std::string &s)
 		}
 		MemToSS("data/level-0");
 		memtable.clear();
+		compaction(0);
 	}
 	memtable.insert(insertData);
 }
@@ -431,7 +433,7 @@ void KVStore::compaction(int level)
 	selectXPlus(level+1,fileMode,selected);
 	selectX(level,fileMode,selected);
 
-	mergeSort(selected);
+	mergeSort(selected,level);
 
 	compaction(level+1);
 
@@ -520,28 +522,22 @@ void KVStore::selectXPlus(int level, bool mode, std::vector<BloomFilter *> &sele
 	}
 }
 
-struct mergeSortNode
-{
-	uint64_t key;
-	uint64_t timeStamp;
-	uint32_t offset;
-	uint32_t length;
-	char *s;
-};
-
 struct mergeSortFile
 {
-	uint64_t key_num;
-	uint64_t time_stamp;
-	uint64_t key_min;
-	uint64_t key_max;
-	
+	uint64_t key_num=0;
+	uint64_t time_stamp=0;
+	uint64_t key_min=0;
+	uint64_t key_max=0;
+	uint64_t totalMemSize=0;
 	std::vector<uint64_t> keys;
 	std::vector<std::string> values;
+	std::vector<uint32_t> offsets;
 
-	void write_to_file(std::string &filePath);
+	BloomFilter * write_to_file(std::string filePath);
 	void read_from_file(std::string &filePath);		//TODO: change it read from cache(Bloomfileter)
 	void read_from_blom(BloomFilter * obj);
+	void add(uint64_t key,uint64_t offset,std::string &value);
+	void init();
 };
 
 void mergeSortFile::read_from_blom(BloomFilter * obj)
@@ -570,10 +566,12 @@ void mergeSortFile::read_from_blom(BloomFilter * obj)
 
 	// read data from buffer
 	int beg=10240+32;
+	totalMemSize=beg;
 	beg+=key_num*(sizeof(uint64_t)+sizeof(uint32_t));
 	char * pos=&buffer[beg];
 	char *str_buffer=new char[file_length+1];
-	std::vector<uint32_t> &offsets=obj->cacheOffset;
+	offsets=obj->cacheOffset;
+	keys=obj->cacheKey;
 	// value start
 
 	for(uint64_t i=0;i<key_num;i++)
@@ -584,13 +582,66 @@ void mergeSortFile::read_from_blom(BloomFilter * obj)
 		memcpy(str_buffer,pos,value_length);
 		pos+=value_length;
 		values.push_back(std::string(str_buffer,value_length));
+		totalMemSize+=sizeof(uint64_t)+sizeof(uint32_t)+value_length;
 	}
 }
 
-void mergeSortFile::write_to_file(std::string &dir)
+BloomFilter * mergeSortFile::write_to_file(std::string dir)
 {
-	std::ofstream fout;
+	std::string fileName=std::to_string(time_stamp)+"_"+std::to_string(key_num)+"_";
+	fileName+=std::to_string(key_min)+"_"+std::to_string(key_max)+".sst";
+	uint64_t headerOffset=0;
+	uint64_t BFOffset=32;
+	uint64_t indexOffset=10240+32;
+	uint64_t indexLength=key_num*(sizeof(uint64_t)+sizeof(uint32_t));
+	uint64_t dataOffset=indexOffset+indexLength;
+	std::ofstream os;
+	bool bloomfilter[81920];
+	memset(bloomfilter,0,sizeof(bloomfilter));
+	unsigned int hash[4]={0};		
+	char *buffer=new char[totalMemSize];
+
+	memcpy(buffer,&time_stamp,sizeof(uint64_t));
+	memcpy(buffer+8,&key_num,sizeof(uint64_t));
+	memcpy(buffer+16,&key_min,sizeof(uint64_t));
+	memcpy(buffer+24,&key_max,sizeof(uint64_t));
+
+	uint32_t key_offset,val_offset,pre_offset;
+	pre_offset=dataOffset;
+
+	for(int i=0;i<key_num;i++)
+	{
+		//copy key
+		key_offset=indexOffset+i*(sizeof(uint64_t)+sizeof(uint32_t));
+		memcpy(buffer+key_offset,&keys[i],sizeof(uint64_t));
+		//copy value & offset
+		val_offset=pre_offset;
+		pre_offset=val_offset+values[i].size();
+		memcpy(buffer+key_offset+sizeof(uint64_t),&val_offset,sizeof(uint32_t));
+		memcpy(buffer+val_offset,values[i].c_str(),values[i].size());
+		//hash
+		MurmurHash3_x64_128(&keys[i],sizeof(uint64_t),1,hash);
+		for(int i=0;i<4;i++)bloomfilter[hash[i]%81920]=true;
+	}
+
+	//copy blommfilter into buffer
+
+	memcpyBoolToChar(buffer+32,bloomfilter,10240);
+
+	const std::string filePath=dir+"/"+fileName;
+	os.open(filePath,std::ios::out|std::ios::binary);
+	if(os.fail())
+	{
+		throw "create file error";
+	}
+	os.write(buffer,totalMemSize);
+	os.close();
 	
+	BloomFilter * tmp= new BloomFilter(time_stamp,buffer+32,keys,offsets,filePath);
+
+	delete[] buffer;
+
+	return tmp;
 }
 
 void mergeSortFile::read_from_file(std::string &filePath)
@@ -605,7 +656,7 @@ void mergeSortFile::read_from_file(std::string &filePath)
 	auto endpos=fin.tellg();
 	auto file_length=endpos-beginpos;
 	fin.seekg(0,std::ios::beg);
-
+	totalMemSize=file_length;
 	if(fin.fail())
 	{
 		throw "open file "+filePath+" in read_from_file error";
@@ -637,7 +688,6 @@ void mergeSortFile::read_from_file(std::string &filePath)
 	pos=&buffer[10240+32];		//key start
 	uint32_t offset_tmp;
 	uint64_t key_tmp;
-	std::vector<uint32_t> offsets;
 	for(uint64_t i=1;i<=key_num;i++)
 	{
 		memcpy(&key_tmp,pos,sizeof(uint64_t));
@@ -663,61 +713,106 @@ void mergeSortFile::read_from_file(std::string &filePath)
 	}
 }
 
-bool mergeSortCmp(mergeSortNode &a,mergeSortNode &b)
+struct mergeNode
 {
-	return a.key==b.key?a.timeStamp>b.timeStamp:a.key<b.key;
+	mergeSortFile *pointer;
+	int index;
+	bool operator<(const mergeNode &obj)const
+	{
+		return pointer->keys[index]<=obj.pointer->keys[index];
+	}
+};
+
+void mergeSortFile::add(uint64_t key,uint64_t offset,std::string &value)
+{
+	keys.push_back(key);
+	offsets.push_back(offset);
+	values.push_back(value);
+	totalMemSize+=sizeof(uint64_t)+sizeof(uint32_t)+value.size();
+}
+void mergeSortFile::init()
+{
+	key_num=keys.size();
+	uint64_t Min=std::numeric_limits<uint64_t>::max();
+	uint64_t Max=0;
+	for(int i=0;i<key_num;i++)
+	{
+		Min=std::min(Min,keys[i]);
+		Max=std::max(Max,keys[i]);
+	}
 }
 
-void KVStore::mergeSort(std::vector<BloomFilter*> &selectd)
+void KVStore::mergeSort(std::vector<BloomFilter*> &selectd,int level)
 {
 	//BloomFilters need delete the one in selected
 	std::sort(BloomFilters.begin(),BloomFilters.end(),cmp);
 
+	std::vector<mergeSortFile*> files;
+	std::vector<mergeNode> sortArray;
 	for(int i=0;i<selectd.size();i++)
 	{
-		auto it=lower_bound(BloomFilters.begin(),BloomFilters.end(),cmp);
+		auto it=lower_bound(BloomFilters.begin(),BloomFilters.end(),selectd[i],cmp);
 		BloomFilters.erase(it);
+
+		files.push_back(new mergeSortFile());
+		files.back()->read_from_blom(selectd[i]);
+		for(int j=files.back()->key_num-1;j>=0;j--)
+		{
+			sortArray.push_back(mergeNode{files.back(),j});
+		}
 	}
+
+	std::sort(sortArray.begin(),sortArray.end());
 
 	// up to now the sstable in selectd have cleared their cache in KVStore(SSTalbeFiles & BloomFilters)
 
-	char *buffer;
-	std::vector<char *> pool;		//delete all buffer in the end
-	std::vector<mergeSortNode> nodes;
-	std::ifstream fin;
-	int filelength;
-	for(int i=0;i<selectd.size();i++)
+	int idx=0;
+	uint64_t time_stamp=0,time_stamp_tmp,idx_tmp;
+
+	mergeSortFile * filetmp=new mergeSortFile(),*InSortArrty;
+	for(idx;idx<sortArray.size();idx++)
 	{
-		fin.open(selectd[i]->getFilePath(),std::ios::in|std::ios::binary);
-		auto beginpos=fin.tellg();
-		fin.seekg(0,std::ios::end);
-		auto endpos=fin.tellg();
-		filelength=endpos-beginpos;
-		fin.seekg(0,std::ios::beg);
-		if(fin.fail()){throw "Open file "+selectd[i]->getFilePath()+" Error";}
-		buffer=new char[filelength+1];
-		buffer[filelength]='\0';
-		fin.read(buffer,filelength);
-		pool.push_back(buffer);
-
-		for(int j=0;j+1<selectd[i]->cacheKey.size();j++)
+		idx_tmp=0;
+		time_stamp_tmp=0;
+		while(idx+1<sortArray.size()
+			&& sortArray[idx].pointer->keys[sortArray[idx].index] == sortArray[idx+1].pointer->keys[sortArray[idx+1].index]
+		)
 		{
-			nodes.push_back(mergeSortNode{
-				selectd[i]->cacheKey[j],
-				selectd[i]->getTimeStamp(),
-				selectd[i]->cacheOffset[j],
-				selectd[i]->cacheOffset[j+1]-selectd[i]->cacheOffset[j],
-				buffer
-			});
+			if(time_stamp_tmp<=sortArray[idx].pointer->time_stamp)
+			{
+				idx_tmp=idx;
+				time_stamp_tmp=sortArray[idx].pointer->time_stamp;
+			}
+			idx++;
 		}
-		nodes.push_back(mergeSortNode{
-				selectd[i]->cacheKey.back(),
-				selectd[i]->getTimeStamp(),
-				selectd[i]->cacheOffset.back(),
-				filelength-selectd[i]->cacheOffset.back(),
-				buffer
-			});
-	}
 
-	std::sort(nodes.begin(),nodes.end(),mergeSortCmp);
+		if(time_stamp_tmp<=sortArray[idx].pointer->time_stamp)
+		{
+			idx_tmp=idx;
+			time_stamp_tmp=sortArray[idx].pointer->time_stamp;
+		}
+		//在相同key中选出time_stamp最大的
+		InSortArrty=sortArray[idx_tmp].pointer;
+		idx_tmp=sortArray[idx_tmp].index;
+		if(InSortArrty->values[idx_tmp]!="~DELETED~")
+		{
+			//如果即将超过2MB
+			if(filetmp->totalMemSize+sizeof(uint64_t)+sizeof(uint32_t)+InSortArrty->values[idx_tmp].size()>2097152)
+			{
+				filetmp->init();
+				BloomFilters.push_back(filetmp->write_to_file("/data/level-"+std::to_string(level)));
+				delete filetmp;
+				filetmp= new mergeSortFile();
+			}
+			filetmp->add(InSortArrty->keys[idx_tmp],
+			InSortArrty->offsets[idx_tmp],
+			InSortArrty->values[idx_tmp]
+			);
+			filetmp->time_stamp=std::max(filetmp->time_stamp,time_stamp_tmp);
+		}
+	}
+	filetmp->init();
+	BloomFilters.push_back(filetmp->write_to_file("/data/level-"+std::to_string(level)));
+	delete filetmp;
+
 }
