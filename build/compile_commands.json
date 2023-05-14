@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build",
+  "command": "/usr/bin/c++   -g -o CMakeFiles/correctness.dir/correctness.cc.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/correctness.cc",
+  "file": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/correctness.cc"
+},
+{
+  "directory": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build",
+  "command": "/usr/bin/c++   -g -o CMakeFiles/correctness.dir/skiplist.cpp.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/skiplist.cpp",
+  "file": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/skiplist.cpp"
+},
+{
+  "directory": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build",
+  "command": "/usr/bin/c++   -g -o CMakeFiles/correctness.dir/kvstore.cc.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/kvstore.cc",
+  "file": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/kvstore.cc"
+},
+{
+  "directory": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build",
+  "command": "/usr/bin/c++   -g -o CMakeFiles/persistence.dir/persistence.cc.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/persistence.cc",
+  "file": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/persistence.cc"
+},
+{
+  "directory": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build",
+  "command": "/usr/bin/c++   -g -o CMakeFiles/persistence.dir/skiplist.cpp.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/skiplist.cpp",
+  "file": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/skiplist.cpp"
+},
+{
+  "directory": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build",
+  "command": "/usr/bin/c++   -g -o CMakeFiles/persistence.dir/kvstore.cc.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/kvstore.cc",
+  "file": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/kvstore.cc"
+}
+]

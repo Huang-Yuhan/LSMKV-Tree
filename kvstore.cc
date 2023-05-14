@@ -529,6 +529,140 @@ struct mergeSortNode
 	char *s;
 };
 
+struct mergeSortFile
+{
+	uint64_t key_num;
+	uint64_t time_stamp;
+	uint64_t key_min;
+	uint64_t key_max;
+	
+	std::vector<uint64_t> keys;
+	std::vector<std::string> values;
+
+	void write_to_file(std::string &filePath);
+	void read_from_file(std::string &filePath);		//TODO: change it read from cache(Bloomfileter)
+	void read_from_blom(BloomFilter * obj);
+};
+
+void mergeSortFile::read_from_blom(BloomFilter * obj)
+{
+	std::ifstream fin;
+	fin.open(obj->getFilePath(),std::ios::in|std::ios::binary);
+	
+	// copy the file content to buffer
+	
+	auto beginpos=fin.tellg();
+	fin.seekg(0,std::ios::end);
+	auto endpos=fin.tellg();
+	auto file_length=endpos-beginpos;
+	fin.seekg(0,std::ios::beg);
+
+	if(fin.fail())
+	{
+		throw "open file "+obj->getFilePath()+" in read_from_file error";
+	}
+
+	char *buffer=new char[file_length+1];
+	buffer[file_length]='\0';
+	fin.read(buffer,file_length);
+
+	fin.close();
+
+	// read data from buffer
+	int beg=10240+32;
+	beg+=key_num*(sizeof(uint64_t)+sizeof(uint32_t));
+	char * pos=&buffer[beg];
+	char *str_buffer=new char[file_length+1];
+	std::vector<uint32_t> &offsets=obj->cacheOffset;
+	// value start
+
+	for(uint64_t i=0;i<key_num;i++)
+	{
+		uint32_t value_length=file_length;
+		if(i+1<key_num)value_length=offsets[i+1];
+		value_length-=offsets[i];
+		memcpy(str_buffer,pos,value_length);
+		pos+=value_length;
+		values.push_back(std::string(str_buffer,value_length));
+	}
+}
+
+void mergeSortFile::write_to_file(std::string &dir)
+{
+	std::ofstream fout;
+	
+}
+
+void mergeSortFile::read_from_file(std::string &filePath)
+{
+	std::ifstream fin;
+	fin.open(filePath,std::ios::in|std::ios::binary);
+	
+	// copy the file content to buffer
+	
+	auto beginpos=fin.tellg();
+	fin.seekg(0,std::ios::end);
+	auto endpos=fin.tellg();
+	auto file_length=endpos-beginpos;
+	fin.seekg(0,std::ios::beg);
+
+	if(fin.fail())
+	{
+		throw "open file "+filePath+" in read_from_file error";
+	}
+
+	char *buffer=new char[file_length+1];
+	buffer[file_length]='\0';
+	fin.read(buffer,file_length);
+
+	fin.close();
+
+	// read data from buffer
+
+	char * pos=buffer;
+	char *str_buffer=new char[file_length+1];
+
+	memcpy(pos,&time_stamp,sizeof(uint64_t));
+	pos+=sizeof(uint64_t);
+
+	memcpy(pos,&key_num,sizeof(uint64_t));
+	pos+=sizeof(uint64_t);
+
+	memcpy(pos,&key_min,sizeof(uint64_t));
+	pos+=sizeof(uint64_t);
+
+	memcpy(pos,&key_max,sizeof(uint64_t));
+	pos+=sizeof(uint64_t);
+
+	pos=&buffer[10240+32];		//key start
+	uint32_t offset_tmp;
+	uint64_t key_tmp;
+	std::vector<uint32_t> offsets;
+	for(uint64_t i=1;i<=key_num;i++)
+	{
+		memcpy(&key_tmp,pos,sizeof(uint64_t));
+		pos+=sizeof(uint64_t);
+
+		memcpy(&offset_tmp,pos,sizeof(uint32_t));
+		pos+=sizeof(uint32_t);
+
+		keys.push_back(key_tmp);
+		offsets.push_back(offset_tmp);
+	}
+
+	// value start
+
+	for(uint64_t i=0;i<key_num;i++)
+	{
+		uint32_t value_length=file_length;
+		if(i+1<key_num)value_length=offsets[i+1];
+		value_length-=offsets[i];
+		memcpy(str_buffer,pos,value_length);
+		pos+=value_length;
+		values.push_back(std::string(str_buffer,value_length));
+	}
+}
+
 bool mergeSortCmp(mergeSortNode &a,mergeSortNode &b)
 {
 	return a.key==b.key?a.timeStamp>b.timeStamp:a.key<b.key;
