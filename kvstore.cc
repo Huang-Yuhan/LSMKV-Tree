@@ -441,7 +441,7 @@ void KVStore::compaction(int level)
 	selectXPlus(level+1,fileMode,selected);
 	selectX(level,fileMode,selected);
 
-	mergeSort(selected,level);
+	mergeSort(selected,level+1);
 
 	compaction(level+1);
 
@@ -537,7 +537,7 @@ struct mergeSortFile
 	uint64_t time_stamp=0;
 	uint64_t key_min=0;
 	uint64_t key_max=0;
-	uint64_t totalMemSize=0;
+	uint64_t totalMemSize=10240+32;
 	std::vector<uint64_t> keys;
 	std::vector<std::string> values;
 	std::vector<uint32_t> offsets;
@@ -792,6 +792,15 @@ void KVStore::mergeSort(std::vector<BloomFilter*> &selectd,int level)
 	int idx=0;
 	uint64_t time_stamp=0,time_stamp_tmp,idx_tmp;
 
+	std::string dir="data/level-"+std::to_string(level);
+	if(!utils::dirExists(dir))
+	{
+		if(utils::mkdir(dir.c_str())!=0)
+		{
+			throw "mkdir error";
+		}
+	}
+
 	mergeSortFile * filetmp=new mergeSortFile(),*InSortArrty;
 	for(idx;idx<sortArray.size();idx++)
 	{
@@ -823,7 +832,9 @@ void KVStore::mergeSort(std::vector<BloomFilter*> &selectd,int level)
 			if(filetmp->totalMemSize+sizeof(uint64_t)+sizeof(uint32_t)+InSortArrty->values[idx_tmp].size()>2097152)
 			{
 				filetmp->init();
-				BloomFilters.push_back(filetmp->write_to_file("data/level-"+std::to_string(level)));
+				BloomFilters.push_back(filetmp->write_to_file(dir));
+				if(SSTalbeFiles.size()<=level)SSTalbeFiles.push_back(std::vector<BloomFilter*>());
+				SSTalbeFiles[level].push_back(BloomFilters.back());
 				delete filetmp;
 				filetmp= new mergeSortFile();
 			}
