@@ -847,6 +847,8 @@ void KVStore::mergeSort(std::vector<BloomFilter*> &selectd,int level)
 	}
 	filetmp->init();
 	BloomFilters.push_back(filetmp->write_to_file("data/level-"+std::to_string(level)));
+	if(SSTalbeFiles.size()<=level)SSTalbeFiles.push_back(std::vector<BloomFilter*>());
+	SSTalbeFiles[level].push_back(BloomFilters.back());
 	delete filetmp;
 	for(int i=0;i<files.size();i++)delete files[i];
 
