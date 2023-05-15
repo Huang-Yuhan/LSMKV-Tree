@@ -5,8 +5,8 @@
 #include <sstream>
 #include <limits>
 
-const bool MODE_TIERING=false;
-const bool MODE_LEVELING=true;
+const bool MODE_TIERING=true;
+const bool MODE_LEVELING=false;
 
 void memcpyBoolToChar(char *_dst,bool *_src,int byte_size);
 void memcpyChartoBool(bool *_dst,char *_src,int byte_size);
@@ -78,6 +78,8 @@ void KVStore::put(uint64_t key, const std::string &s)
 		}
 		MemToSS("data/level-0");
 		memtable.clear();
+		if(SSTalbeFiles.empty())SSTalbeFiles.push_back(std::vector<BloomFilter*>(1,BloomFilters.back()));
+		else SSTalbeFiles[0].push_back(BloomFilters.back());
 		compaction(0);
 	}
 	memtable.insert(insertData);
@@ -141,6 +143,12 @@ void KVStore::reset()
 				throw "rm file "+files[j]+"error";
 		}
 	}
+
+	for(int i=0;i<SSTalbeFiles.size();i++)
+	{
+		SSTalbeFiles[i].clear();
+	}
+	SSTalbeFiles.clear();
 }
 
 /**
@@ -490,6 +498,7 @@ void KVStore::selectX(int level, bool mode, std::vector<BloomFilter *> &selected
 
 void KVStore::selectXPlus(int level, bool mode, std::vector<BloomFilter *> &selected)
 {
+	if(SSTalbeFiles.size()<=level)return;
 	std::vector<BloomFilter *> &files=SSTalbeFiles[level];
 	std::vector<BloomFilter *> &preFiles=SSTalbeFiles[level-1];
 	if(mode==MODE_TIERING)// select all files
@@ -501,7 +510,7 @@ void KVStore::selectXPlus(int level, bool mode, std::vector<BloomFilter *> &sele
 		uint64_t keymin,keymax;
 		keymin=preFiles[0]->getKeyMin();
 		keymax=preFiles[0]->getKeyMax();
-		for(int i=1;i<=preFiles.size();i++)
+		for(int i=1;i<preFiles.size();i++)
 		{
 			keymin=std::min(keymin,preFiles[i]->getKeyMin());
 			keymax=std::max(keymax,preFiles[i]->getKeyMax());
@@ -564,6 +573,13 @@ void mergeSortFile::read_from_blom(BloomFilter * obj)
 
 	fin.close();
 
+	//copy from obj
+
+	time_stamp=obj->getTimeStamp();
+	key_num=obj->getKeyNum();
+	key_min=obj->getKeyMin();
+	key_max=obj->getKeyMax();
+
 	// read data from buffer
 	int beg=10240+32;
 	totalMemSize=beg;
@@ -584,6 +600,8 @@ void mergeSortFile::read_from_blom(BloomFilter * obj)
 		values.push_back(std::string(str_buffer,value_length));
 		totalMemSize+=sizeof(uint64_t)+sizeof(uint32_t)+value_length;
 	}
+
+	utils::rmfile(obj->getFilePath().c_str());
 }
 
 BloomFilter * mergeSortFile::write_to_file(std::string dir)
@@ -717,9 +735,10 @@ struct mergeNode
 {
 	mergeSortFile *pointer;
 	int index;
+	mergeNode(mergeSortFile*p,int _index):pointer(p),index(_index){}
 	bool operator<(const mergeNode &obj)const
 	{
-		return pointer->keys[index]<=obj.pointer->keys[index];
+		return pointer->keys[index]<=obj.pointer->keys[obj.index];
 	}
 };
 
@@ -740,6 +759,8 @@ void mergeSortFile::init()
 		Min=std::min(Min,keys[i]);
 		Max=std::max(Max,keys[i]);
 	}
+	key_min=Min;
+	key_max=Max;
 }
 
 void KVStore::mergeSort(std::vector<BloomFilter*> &selectd,int level)
@@ -754,11 +775,13 @@ void KVStore::mergeSort(std::vector<BloomFilter*> &selectd,int level)
 		auto it=lower_bound(BloomFilters.begin(),BloomFilters.end(),selectd[i],cmp);
 		BloomFilters.erase(it);
 
-		files.push_back(new mergeSortFile());
-		files.back()->read_from_blom(selectd[i]);
-		for(int j=files.back()->key_num-1;j>=0;j--)
+		mergeSortFile * ptr=new mergeSortFile();
+
+		files.push_back(ptr);
+		ptr->read_from_blom(selectd[i]);
+		for(int j=ptr->key_num-1;j>=0;j--)
 		{
-			sortArray.push_back(mergeNode{files.back(),j});
+			sortArray.push_back(mergeNode(ptr,j));
 		}
 	}
 
@@ -800,7 +823,7 @@ void KVStore::mergeSort(std::vector<BloomFilter*> &selectd,int level)
 			if(filetmp->totalMemSize+sizeof(uint64_t)+sizeof(uint32_t)+InSortArrty->values[idx_tmp].size()>2097152)
 			{
 				filetmp->init();
-				BloomFilters.push_back(filetmp->write_to_file("/data/level-"+std::to_string(level)));
+				BloomFilters.push_back(filetmp->write_to_file("data/level-"+std::to_string(level)));
 				delete filetmp;
 				filetmp= new mergeSortFile();
 			}
@@ -812,7 +835,8 @@ void KVStore::mergeSort(std::vector<BloomFilter*> &selectd,int level)
 		}
 	}
 	filetmp->init();
-	BloomFilters.push_back(filetmp->write_to_file("/data/level-"+std::to_string(level)));
+	BloomFilters.push_back(filetmp->write_to_file("data/level-"+std::to_string(level)));
 	delete filetmp;
+	for(int i=0;i<files.size();i++)delete files[i];
 
 }

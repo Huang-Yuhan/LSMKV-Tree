@@ -8,7 +8,7 @@
             "name": "(gdb) 启动",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/persistence",
+            "program": "${workspaceFolder}/build/correctness",
             "args": ["-v","-t"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
