@@ -28,5 +28,10 @@
   "directory": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build",
   "command": "/usr/bin/c++   -g -o CMakeFiles/persistence.dir/kvstore.cc.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/kvstore.cc",
   "file": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/kvstore.cc"
+},
+{
+  "directory": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/build",
+  "command": "/usr/bin/c++   -g -o CMakeFiles/read_sst.dir/read_sst.cpp.o -c /home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/read_sst.cpp",
+  "file": "/home/icecreamsakaz/桌面/advanced_datastructure/LSMKV-Tree/read_sst.cpp"
 }
 ]

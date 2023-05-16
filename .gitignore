@@ -36,3 +36,6 @@
 *.make
 *.cmake
 *.ts
+
+# error message
+*.err

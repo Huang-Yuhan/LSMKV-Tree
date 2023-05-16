@@ -45,4 +45,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/correctness.dir/DependInfo.cmake"
   "CMakeFiles/persistence.dir/DependInfo.cmake"
+  "CMakeFiles/read_sst.dir/DependInfo.cmake"
   )

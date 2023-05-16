@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -rdynamic CMakeFiles/read_sst.dir/read_sst.cpp.o -o read_sst 

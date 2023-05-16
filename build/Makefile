@@ -142,6 +142,19 @@ persistence/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/build
 .PHONY : persistence/fast
 
+#=============================================================================
+# Target rules for targets named read_sst
+
+# Build rule for target.
+read_sst: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 read_sst
+.PHONY : read_sst
+
+# fast build rule for target.
+read_sst/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/read_sst.dir/build.make CMakeFiles/read_sst.dir/build
+.PHONY : read_sst/fast
+
 correctness.o: correctness.cc.o
 .PHONY : correctness.o
 
@@ -217,6 +230,30 @@ persistence.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/persistence.dir/build.make CMakeFiles/persistence.dir/persistence.cc.s
 .PHONY : persistence.cc.s
 
+read_sst.o: read_sst.cpp.o
+.PHONY : read_sst.o
+
+# target to build an object file
+read_sst.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/read_sst.dir/build.make CMakeFiles/read_sst.dir/read_sst.cpp.o
+.PHONY : read_sst.cpp.o
+
+read_sst.i: read_sst.cpp.i
+.PHONY : read_sst.i
+
+# target to preprocess a source file
+read_sst.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/read_sst.dir/build.make CMakeFiles/read_sst.dir/read_sst.cpp.i
+.PHONY : read_sst.cpp.i
+
+read_sst.s: read_sst.cpp.s
+.PHONY : read_sst.s
+
+# target to generate assembly for a file
+read_sst.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/read_sst.dir/build.make CMakeFiles/read_sst.dir/read_sst.cpp.s
+.PHONY : read_sst.cpp.s
+
 skiplist.o: skiplist.cpp.o
 .PHONY : skiplist.o
 
@@ -254,6 +291,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... correctness"
 	@echo "... persistence"
+	@echo "... read_sst"
 	@echo "... correctness.o"
 	@echo "... correctness.i"
 	@echo "... correctness.s"
@@ -263,6 +301,9 @@ help:
 	@echo "... persistence.o"
 	@echo "... persistence.i"
 	@echo "... persistence.s"
+	@echo "... read_sst.o"
+	@echo "... read_sst.i"
+	@echo "... read_sst.s"
 	@echo "... skiplist.o"
 	@echo "... skiplist.i"
 	@echo "... skiplist.s"

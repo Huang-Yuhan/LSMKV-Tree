@@ -12,6 +12,7 @@ void memcpyBoolToChar(char *_dst,bool *_src,int byte_size);
 void memcpyChartoBool(bool *_dst,char *_src,int byte_size);
 void split(const std::string &s,std::vector<std::string> &v,char delim);
 bool cmp(BloomFilter*a,BloomFilter *b);
+void read_from_file(std::string &filePath);
 
 
 KVStore::KVStore(const std::string &dir): KVStoreAPI(dir)
@@ -196,10 +197,10 @@ void KVStore::MemToSS(const std::string &dir)
 		memcpy(buffer+index,&(p->val.key),sizeof(uint64_t));			//key
 		mem_key.push_back(p->val.key);
 		valOffset=preOffset;
-		preOffset=valOffset+sizeof(char)*p->val.value.size();
+		preOffset=valOffset+sizeof(char)*(p->val.value.size());
 		memcpy(buffer+index+sizeof(uint64_t),&valOffset,sizeof(uint32_t));		//offset
 		mem_offset.push_back(valOffset);
-		memcpy(buffer+valOffset,p->val.value.c_str(),sizeof(char)*p->val.value.size());	//value
+		memcpy(buffer+valOffset,p->val.value.c_str(),sizeof(char)*(p->val.value.size()));	//value
 		MurmurHash3_x64_128(&(p->val.key),sizeof(uint64_t),1,hash);
 		for(int i=0;i<4;i++)bloomfilter[hash[i]%BloomFilterMaxSize]=true;
 		keymax=p->val.key;
@@ -387,7 +388,7 @@ BloomFilter* KVStore::readSSTable(const std::string &filePath)
 	buffer=new char[bufferLength];
 	fin.read(buffer,bufferLength);
 
-	std::ofstream fout("err/level-0/"+fileName);
+	//std::ofstream fout("err/level-0/"+fileName);
 	#pragma pack(4)
 	struct KeyOffset
 	{
@@ -409,7 +410,7 @@ BloomFilter* KVStore::readSSTable(const std::string &filePath)
 	delete[] KO;
 	delete[] buffer;
 	fin.close();
-	fout.close();
+	//fout.close();
 	return tmp;
 }
 
@@ -602,6 +603,16 @@ void mergeSortFile::read_from_blom(BloomFilter * obj)
 	}
 
 	utils::rmfile(obj->getFilePath().c_str());
+
+	/*if(time_stamp==258)
+	{
+		std::ofstream os("err255.txt");
+		os<<"key_num:"<<key_num<<"\ntime_stamp:"<<time_stamp<<"\nkey_min:"<<key_min<<"\nkey_max"<<key_max<<"\n";
+		for(int i=0;i<key_num;i++)
+		{
+			os<<keys[i]<<" "<<values[i]<<"\n";
+		}
+	}*/
 }
 
 BloomFilter * mergeSortFile::write_to_file(std::string dir)
@@ -635,8 +646,9 @@ BloomFilter * mergeSortFile::write_to_file(std::string dir)
 		//copy value & offset
 		val_offset=pre_offset;
 		pre_offset=val_offset+values[i].size();
+		offsets[i]=val_offset;
 		memcpy(buffer+key_offset+sizeof(uint64_t),&val_offset,sizeof(uint32_t));
-		memcpy(buffer+val_offset,values[i].c_str(),values[i].size());
+		memcpy(buffer+val_offset,values[i].c_str(),values[i].size());												//c_str() may add '\0?
 		//hash
 		MurmurHash3_x64_128(&keys[i],sizeof(uint64_t),1,hash);
 		for(int i=0;i<4;i++)bloomfilter[hash[i]%81920]=true;
@@ -826,7 +838,7 @@ void KVStore::mergeSort(std::vector<BloomFilter*> &selectd,int level)
 		//在相同key中选出time_stamp最大的
 		InSortArrty=sortArray[idx_tmp].pointer;
 		idx_tmp=sortArray[idx_tmp].index;
-		if(InSortArrty->values[idx_tmp]!="~DELETED~")
+		if(InSortArrty->values[idx_tmp]!="~DELETED~"||level!=levelConfiguration.size()+1)
 		{
 			//如果即将超过2MB
 			if(filetmp->totalMemSize+sizeof(uint64_t)+sizeof(uint32_t)+InSortArrty->values[idx_tmp].size()>2097152)
@@ -852,4 +864,85 @@ void KVStore::mergeSort(std::vector<BloomFilter*> &selectd,int level)
 	delete filetmp;
 	for(int i=0;i<files.size();i++)delete files[i];
 
+}
+
+void read_from_file(std::string &filePath)
+{
+	std::ifstream fin;
+	fin.open(filePath,std::ios::in|std::ios::binary);
+	
+	// copy the file content to buffer
+	
+	auto beginpos=fin.tellg();
+	fin.seekg(0,std::ios::end);
+	auto endpos=fin.tellg();
+	auto file_length=endpos-beginpos;
+	fin.seekg(0,std::ios::beg);
+	uint32_t totalMemSize=file_length;
+	if(fin.fail())
+	{
+		throw "open file "+filePath+" in read_from_file error";
+	}
+
+	char *buffer=new char[file_length+1];
+	buffer[file_length]='\0';
+	fin.read(buffer,file_length);
+
+	fin.close();
+
+	// read data from buffer
+
+	char * pos=buffer;
+	char *str_buffer=new char[file_length+1];
+	uint64_t time_stamp,key_num,key_min,key_max;
+	memcpy(&time_stamp,pos,sizeof(uint64_t));
+	pos+=sizeof(uint64_t);
+
+	memcpy(&key_num,pos,sizeof(uint64_t));
+	pos+=sizeof(uint64_t);
+
+	memcpy(&key_min,pos,sizeof(uint64_t));
+	pos+=sizeof(uint64_t);
+
+	memcpy(&key_max,pos,sizeof(uint64_t));
+	pos+=sizeof(uint64_t);
+
+	pos=&buffer[10240+32];		//key start
+	uint32_t offset_tmp;
+	uint64_t key_tmp;
+	std::vector<uint64_t> keys;
+	std::vector<uint32_t> offsets;
+	std::vector<std::string> values;
+	for(uint64_t i=1;i<=key_num;i++)
+	{
+		memcpy(&key_tmp,pos,sizeof(uint64_t));
+		pos+=sizeof(uint64_t);
+
+		memcpy(&offset_tmp,pos,sizeof(uint32_t));
+		pos+=sizeof(uint32_t);
+
+		keys.push_back(key_tmp);
+		offsets.push_back(offset_tmp);
+	}
+
+	// value start
+
+	for(uint64_t i=0;i<key_num;i++)
+	{
+		uint32_t value_length=file_length;
+		if(i+1<key_num)value_length=offsets[i+1];
+		value_length-=offsets[i];
+		memcpy(str_buffer,pos,value_length);
+		pos+=value_length;
+		values.push_back(std::string(str_buffer,value_length));
+	}
+
+	{
+		std::ofstream os("255content.txt");
+		os<<"key_num:"<<key_num<<"\ntime_stamp:"<<time_stamp<<"\nkey_min:"<<key_min<<"\nkey_max"<<key_max<<"\n";
+		for(int i=0;i<key_num;i++)
+		{
+			os<<keys[i]<<" "<<values[i]<<"\n";
+		}
+	}
 }
