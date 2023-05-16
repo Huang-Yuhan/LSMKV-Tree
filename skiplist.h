@@ -8,11 +8,13 @@
 #include<vector>
 #include<string>
 #include<list>
+#include<fstream>
 class skipListData
 {
 public:
     uint64_t key;
     std::string value;
+    skipListData(){}
     skipListData(uint64_t _key,const std::string &_value):key(_key),value(_value)
     {}
     bool operator<(const skipListData&obj)const
@@ -59,4 +61,5 @@ public:
     skipListNode*const end();
     void clear();
 };
+
 #endif //LSMKV_TREE_SKIPLIST_H

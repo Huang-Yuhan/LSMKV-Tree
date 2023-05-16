@@ -75,7 +75,7 @@ void read_from_file(std::string filePath)
 	}
 
 	{
-		std::ofstream os("255content.txt");
+		std::ofstream os("content.txt");
 		os<<"key_num:"<<key_num<<"\ntime_stamp:"<<time_stamp<<"\nkey_min:"<<key_min<<"\nkey_max"<<key_max<<"\n";
 		for(int i=0;i<key_num;i++)
 		{
@@ -84,8 +84,8 @@ void read_from_file(std::string filePath)
 	}
 }
 
-int main()
+int main(int argc,char *argv[])
 {
-    read_from_file("data/level-1/260_14487_4061_32767.sst");
+    read_from_file(argv[1]);
     return 0;
 }

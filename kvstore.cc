@@ -439,8 +439,8 @@ void KVStore::compaction(int level)
 
 	std::vector<BloomFilter*> selected;
 	//Select files
-	selectXPlus(level+1,fileMode,selected);
 	selectX(level,fileMode,selected);
+	selectXPlus(level+1,fileMode,selected);
 
 	mergeSort(selected,level+1);
 
@@ -501,7 +501,6 @@ void KVStore::selectXPlus(int level, bool mode, std::vector<BloomFilter *> &sele
 {
 	if(SSTalbeFiles.size()<=level)return;
 	std::vector<BloomFilter *> &files=SSTalbeFiles[level];
-	std::vector<BloomFilter *> &preFiles=SSTalbeFiles[level-1];
 	if(mode==MODE_TIERING)// select all files
 	{
 		return;
@@ -509,12 +508,12 @@ void KVStore::selectXPlus(int level, bool mode, std::vector<BloomFilter *> &sele
 	else
 	{
 		uint64_t keymin,keymax;
-		keymin=preFiles[0]->getKeyMin();
-		keymax=preFiles[0]->getKeyMax();
-		for(int i=1;i<preFiles.size();i++)
+		keymin=selected[0]->getKeyMin();
+		keymax=selected[0]->getKeyMax();
+		for(int i=1;i<selected.size();i++)
 		{
-			keymin=std::min(keymin,preFiles[i]->getKeyMin());
-			keymax=std::max(keymax,preFiles[i]->getKeyMax());
+			keymin=std::min(keymin,selected[i]->getKeyMin());
+			keymax=std::max(keymax,selected[i]->getKeyMax());
 		}
 
 		for(auto it=files.begin();it!=files.end();)

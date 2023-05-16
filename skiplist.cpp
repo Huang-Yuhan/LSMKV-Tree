@@ -6,6 +6,8 @@
 #include<ctime>
 #include<cmath>
 #include<iostream>
+#include "utils.h"
+
 skipListData findError=skipListData(0,"\1");
 
 SkipList::SkipList()
@@ -17,6 +19,8 @@ SkipList::SkipList()
     head=new skipListNode(skipListData(0,""));
     for(int i=0;i<32;i++)head->next[i]=tail;
     pr=0.5;
+    
+
 }
 
 void SkipList::insert(skipListData &x)

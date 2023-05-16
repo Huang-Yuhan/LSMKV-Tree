@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/persistence",
-            "args": [],
+            "args": ["-t"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
